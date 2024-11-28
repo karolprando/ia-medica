@@ -89,8 +89,22 @@ function GerarPDF(){
 const apiKey = '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';//!Chave de acesso
 //todo-Endpoint da API Groq
 const endpoint = 'https://api.groq.com/openai/v1/chat/completions';
-//todo-Função que pega os sintoma(s) e faz a pergunta a IA
+
+//GPT4
 function requestBody(text) {
+    return {
+        "messages": [
+            {
+                "role": "user",
+                "content": `Informe as top 3 possíveis doenças para os seguintes sintomas: ${text}, começe a resposta sempre com um 'Com base' e essa resposta tem que auxiliar o médico.`
+            }
+        ],
+        "model": "gpt-4" // Atualizado para usar GPT-4
+    }
+}
+
+//todo-Função que pega os sintoma(s) e faz a pergunta a IA
+/*function requestBody(text) {
     return {
         "messages": [
             {
@@ -100,9 +114,12 @@ function requestBody(text) {
         ],
         "model": "llama3-8b-8192"
     }
-}
+}*/
+
+
+
 //todo-Função ligada ao segundo botão, que permite pegar resposta da IA e liberar botão de pdf
-async function chamarGroqAPI() {
+/*async function chamarGroqAPI() {
     var sint= document.getElementById('sintomas').value;
     var prev= document.getElementById('previa');
     var nome= document.getElementById('nome').value;
@@ -146,4 +163,49 @@ async function chamarGroqAPI() {
     }else{
         window.alert('[ALERTA] Preencha os dados primeiro!')
       }
+}*/
+
+async function chamarOpenAIAPI() {
+    var sint = document.getElementById('sintomas').value;
+    var prev = document.getElementById('previa');
+    var nome = document.getElementById('nome').value;
+    var pdf = document.querySelector('.pdf');
+    var consulta = document.querySelector('.consulta');
+
+    // Validação de campos
+    if (nome !== '' && sint !== '') {
+        prev.innerHTML = 'CARREGANDO...';
+        consulta.innerHTML = `<img class="icon loader" src="img/icon_loading.png" alt="">Loading...`;
+
+        try {
+            const response = await fetch('https://api.openai.com/v1/chat/completions', { // Endpoint do OpenAI
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`, // Substituir pela chave da OpenAI
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody(sint))
+            });
+
+            if (!response.ok) {
+                throw new Error(`Erro: ${response.status} - ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            console.log('Resposta da API OpenAI:', data);
+            prev.innerHTML = data.choices[0].message.content; // Caminho ajustado para OpenAI
+            consulta.innerHTML = `<img class="icon" src="icon_consulta.png" alt="">Consultar`;
+
+            // Configurações do botão PDF
+            pdf.style.backgroundColor = "red";
+            pdf.innerHTML = `<img class="icon" src="img/icon_pdf.png" alt=""> Gerar PDF`;
+            pdf.style.cursor = "pointer";
+            pdf.removeAttribute("disabled");
+        } catch (error) {
+            window.alert('Erro ao chamar a API OpenAI');
+            console.error('Erro ao chamar a API OpenAI:', error);
+        }
+    } else {
+        window.alert('[ALERTA] Preencha os dados primeiro!');
+    }
 }
